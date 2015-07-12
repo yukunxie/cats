@@ -1,14 +1,36 @@
+all: parser
 
-objects = main.o node_integer.o
-		  
-cats: $(objects)
-	g++ -o cats $(objects)
-	
-main.o: main.cpp ast/ast_node.hpp ast/node_integer.hpp
-	g++ -c main.cpp
-	
-node_integer.o: ast/node_integer.cpp ast/node_integer.hpp ast/ast_node.hpp
-	g++ -c ast/node_integer.cpp
+OBJS = parser.o  \
+       codegen.o \
+       main.o    \
+       tokens.o  \
+       corefn.o  \
+	   native.o  \
+
+LIB=-L/usr/local/Cellar/llvm/3.5.0_2/lib
+INC=-I/usr/local/Cellar/llvm/3.5.0_2/include
+LLVMCONFIG = llvm-config
+CPPFLAGS = `$(LLVMCONFIG) --cppflags` -lstdc++  -std=c++11 -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS
+LDFLAGS = `$(LLVMCONFIG) --ldflags` -lpthread -ll -lz -lncurses -rdynamic
+LIBS = `$(LLVMCONFIG) --libs`
 
 clean:
-	rm cats main.o node_integer.o
+	$(RM) -rf parser.cpp parser.hpp parser tokens.cpp $(OBJS)
+
+parser.cpp: parser.y
+	bison -d -o $@ $^
+	
+parser.hpp: parser.cpp
+
+tokens.cpp: tokens.l parser.hpp
+	flex -o $@ $^ 
+
+%.o: %.cpp
+	g++ -c $(CPPFLAGS) -o $@ $< $(INC) $(LIB)
+
+
+parser: $(OBJS)
+	g++ -o $@ $(OBJS) $(LIBS) $(LDFLAGS) $(LIB)
+
+test: parser example.txt
+	cat example.txt | ./parser

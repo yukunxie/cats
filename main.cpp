@@ -1,12 +1,25 @@
-#include "ast/ast_node.hpp"
-#include "ast/node_integer.hpp"
-#include <stdio.h>
+#include <iostream>
+#include "codegen.h"
+#include "node.h"
 
-int main()
+using namespace std;
+
+extern int yyparse();
+extern NBlock* programBlock;
+
+void createCoreFunctions(CodeGenContext& context);
+
+int main(int argc, char **argv)
 {
-	ASTNode * node = new NodeInteger(12323);
-	node->codeGen();
-	printf("\n");
-	printf("fffffffffffff\n");
+	yyparse();
+	//cout << programBlock << endl;
+    // see http://comments.gmane.org/gmane.comp.compilers.llvm.devel/33877
+	InitializeNativeTarget();
+	CodeGenContext context;
+	createCoreFunctions(context);
+	context.generateCode(*programBlock);
+	context.runCode();
+	
 	return 0;
 }
+
