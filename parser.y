@@ -31,6 +31,7 @@
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
 %token <token> TRETURN TEXTERN
+%token <token> TFOR TWHILE TIF TELSE
 
 /* Define the type of node our nonterminal symbols represent.
    The types refer to the %union declaration above. Ex: when
@@ -42,7 +43,7 @@
 %type <varvec> func_decl_args
 %type <exprvec> call_args
 %type <block> program stmts block
-%type <stmt> stmt var_decl func_decl extern_decl
+%type <stmt> stmt var_decl func_decl extern_decl if_stmt
 %type <token> comparison
 
 /* Operator precedence for mathematical operators */
@@ -60,7 +61,8 @@ stmts : stmt { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
 	  | stmts stmt { $1->statements.push_back($<stmt>2); }
 	  ;
 
-stmt : var_decl | func_decl | extern_decl
+stmt : var_decl | func_decl | extern_decl   
+	| if_stmt {$$ = $1;}
 	 | expr { $$ = new NExpressionStatement(*$1); }
 	 | TRETURN expr { $$ = new NReturnStatement(*$2); }
      ;
@@ -80,6 +82,7 @@ extern_decl : TEXTERN ident ident TLPAREN func_decl_args TRPAREN
 func_decl : ident ident TLPAREN func_decl_args TRPAREN block 
 			{ $$ = new NFunctionDeclaration(*$1, *$2, *$4, *$6); delete $4; }
 		  ;
+
 	
 func_decl_args : /*blank*/  { $$ = new VariableList(); }
 		  | var_decl { $$ = new VariableList(); $$->push_back($<var_decl>1); }
@@ -105,6 +108,8 @@ expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
      | TLPAREN expr TRPAREN { $$ = $2; }
 	 ;
 	
+if_stmt : TIF TLPAREN expr TRPAREN block TELSE block {$$ = new NIfElseStatement(*$3, *$5, *$7);}
+		;
 call_args : /*blank*/  { $$ = new ExpressionList(); }
 		  | expr { $$ = new ExpressionList(); $$->push_back($1); }
 		  | call_args TCOMMA expr  { $1->push_back($3); }

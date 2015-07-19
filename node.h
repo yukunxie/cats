@@ -130,3 +130,15 @@ public:
 		type(type), id(id), arguments(arguments), block(block) { }
 	virtual llvm::Value* codeGen(CodeGenContext& context);
 };
+
+class NIfElseStatement : public NStatement {
+public:
+	NExpression& condExpr;
+	NBlock& thenBlock;
+	NBlock&  elseBlock;
+	NIfElseStatement(NExpression& condExpr, NBlock& thenBlock, NBlock& elseBlock ) :
+		condExpr(condExpr), thenBlock(thenBlock), elseBlock(elseBlock) {}
+	virtual llvm::Value* codeGen(CodeGenContext& context);
+};
+
+

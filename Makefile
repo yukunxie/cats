@@ -26,11 +26,11 @@ tokens.cpp: tokens.l parser.hpp
 	flex -o $@ $^ 
 
 %.o: %.cpp
-	g++ -c $(CPPFLAGS) -o $@ $< $(INC) $(LIB)
+	g++ -c $(CPPFLAGS) -o $@ $< $(INC) $(LIB) -g
 
 
 parser: $(OBJS)
-	g++ -o $@ $(OBJS) $(LIBS) $(LDFLAGS) $(LIB)
+	g++ -o $@ $(OBJS) $(LIBS) $(LDFLAGS) $(LIB) -g
 
 test: parser example.txt
 	cat example.txt | ./parser

@@ -29,7 +29,9 @@ public:
 
 class CodeGenContext {
     std::stack<CodeGenBlock *> blocks;
+public:
     Function *mainFunction;
+	Function *currentFunction;
 
 public:
     Module *module;

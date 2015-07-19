@@ -4,6 +4,8 @@
 
 using namespace std;
 
+IRBuilder<> builder(getGlobalContext());
+
 /* Compile the AST into a module */
 void CodeGenContext::generateCode(NBlock& root)
 {
@@ -14,6 +16,8 @@ void CodeGenContext::generateCode(NBlock& root)
 	FunctionType *ftype = FunctionType::get(Type::getVoidTy(getGlobalContext()), makeArrayRef(argTypes), false);
 	mainFunction = Function::Create(ftype, GlobalValue::InternalLinkage, "main", module);
 	BasicBlock *bblock = BasicBlock::Create(getGlobalContext(), "entry", mainFunction, 0);
+	
+	currentFunction = mainFunction;
 	
 	/* Push a new variable/block context */
 	pushBlock(bblock);
@@ -103,12 +107,16 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 		case TDIV: 		instr = Instruction::SDiv; goto math;
 				
 		/* TODO comparison */
+		case TCEQ:		goto cmp;
 	}
 
 	return NULL;
 math:
 	return BinaryOperator::Create(instr, lhs.codeGen(context), 
 		rhs.codeGen(context), "", context.currentBlock());
+
+cmp:
+	return CmpInst::Create(Instruction::ICmp, CmpInst::ICMP_EQ,lhs.codeGen(context), rhs.codeGen(context), "", context.currentBlock());
 }
 
 Value* NAssignment::codeGen(CodeGenContext& context)
@@ -181,6 +189,9 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 	FunctionType *ftype = FunctionType::get(typeOf(type), makeArrayRef(argTypes), false);
 	Function *function = Function::Create(ftype, GlobalValue::InternalLinkage, id.name.c_str(), context.module);
 	BasicBlock *bblock = BasicBlock::Create(getGlobalContext(), "entry", function, 0);
+	Function *oldFunction = context.currentFunction;
+	context.currentFunction = function;
+	auto oldBlock = context.currentBlock();
 
 	context.pushBlock(bblock);
 
@@ -196,9 +207,38 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 	}
 	
 	block.codeGen(context);
-	ReturnInst::Create(getGlobalContext(), context.getCurrentReturnValue(), bblock);
-
-	context.popBlock();
+	ReturnInst::Create(getGlobalContext(), context.getCurrentReturnValue(), context.currentBlock());
+	
+	while (context.currentBlock() != oldBlock)
+		context.popBlock();
+	context.currentFunction = oldFunction;
 	//std::cout << "Creating function: " << id.name << endl;
 	return function;
+}
+
+Value* NIfElseStatement::codeGen(CodeGenContext& context)
+{
+	//std::cout <<"being" << endl;
+	Value* test = condExpr.codeGen( context );
+	
+	//std::cout <<"being 1 " << test << endl;
+	BasicBlock *btrue = BasicBlock::Create(getGlobalContext(), "thenBlock", context.currentFunction);
+	//std::cout <<"being 2 " << btrue << endl;
+	BasicBlock *bfalse = BasicBlock::Create(getGlobalContext(), "elseBlock", context.currentFunction);
+	//std::cout <<"being 3 " << bfalse << endl;
+	BasicBlock *bmerge = BasicBlock::Create(getGlobalContext(), "mergeStmt", context.currentFunction);    
+	//std::cout <<"being 4 " << context.currentBlock() << endl;
+	auto ret = llvm::BranchInst::Create(btrue,bfalse,test,context.currentBlock());
+	
+	//std::cout <<"if self " << endl;
+	context.pushBlock(btrue);
+	thenBlock.codeGen(context);
+	llvm::BranchInst::Create(bmerge,context.currentBlock());
+	context.popBlock();
+	context.pushBlock(bfalse);
+	elseBlock.codeGen(context);
+	llvm::BranchInst::Create(bmerge,context.currentBlock());
+	context.popBlock();
+	context.pushBlock(bmerge);
+	return ret;
 }

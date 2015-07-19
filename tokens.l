@@ -14,6 +14,10 @@
 [ \t\n]					        ;
 "extern"                        return TOKEN(TEXTERN);
 "return"				        return TOKEN(TRETURN);
+"for"							return TOKEN(TFOR);
+"while"							return TOKEN(TWHILE);
+"if"							return TOKEN(TIF);
+"else"							return TOKEN(TELSE);
 [a-zA-Z_][a-zA-Z0-9_]*  SAVE_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]* 			    SAVE_TOKEN; return TDOUBLE;
 [0-9]+					        SAVE_TOKEN; return TINTEGER;

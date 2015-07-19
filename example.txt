@@ -1,8 +1,9 @@
 
 int do_math(int a) {
-  int x = a * 5
-  return x + 3
+	if (88888888 == 9) {echo(123)} else {echo (456)}
+	int x = 10 * 5
+	return x + 3
 }
 
-echo(do_math(11))
+
 echo(do_math(12))
