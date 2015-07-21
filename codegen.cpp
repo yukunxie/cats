@@ -73,11 +73,16 @@ Value* NDouble::codeGen(CodeGenContext& context)
 Value* NIdentifier::codeGen(CodeGenContext& context)
 {
 	//std::cout << "Creating identifier reference: " << name << endl;
-	if (context.locals().find(name) == context.locals().end()) {
-		std::cerr << "undeclared variable " << name << endl;
+	Value *value = context.getVar(name);
+	if (value == NULL) {
 		return NULL;
 	}
-	return new LoadInst(context.locals()[name], "", false, context.currentBlock());
+	//if (context.locals().find(name) == context.locals().end()) {
+	//	std::cerr << "undeclared variable " << name << endl;
+	//	return NULL;
+	//}
+	//std::cout << value <<" " << context.locals()[name] << endl;
+	return new LoadInst(value, "", false, context.currentBlock());
 }
 
 Value* NMethodCall::codeGen(CodeGenContext& context)
@@ -122,11 +127,12 @@ cmp:
 Value* NAssignment::codeGen(CodeGenContext& context)
 {
 	//std::cout << "Creating assignment for " << lhs.name << endl;
-	if (context.locals().find(lhs.name) == context.locals().end()) {
+	Value * value = context.getVar(lhs.name);
+	if (value == NULL) {
 		std::cerr << "undeclared variable " << lhs.name << endl;
 		return NULL;
 	}
-	return new StoreInst(rhs.codeGen(context), context.locals()[lhs.name], false, context.currentBlock());
+	return new StoreInst(rhs.codeGen(context), value, false, context.currentBlock());
 }
 
 Value* NBlock::codeGen(CodeGenContext& context)
@@ -203,7 +209,8 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 		
 		argumentValue = argsValues++;
 		argumentValue->setName((*it)->id.name.c_str());
-		StoreInst *inst = new StoreInst(argumentValue, context.locals()[(*it)->id.name], false, bblock);
+		auto value = context.getVar((*it)->id.name);
+		StoreInst *inst = new StoreInst(argumentValue, value, false, bblock);
 	}
 	
 	block.codeGen(context);
