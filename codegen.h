@@ -82,14 +82,6 @@ public:
 	Value * getVar(const std::string &varName){
 		CodeGenBlock *pBlock = blocks.top();
 		return pBlock->getVarValue(varName);
-        std::map<std::string, Value *>::iterator it = pBlock->locals.find(varName);
-		if (it == pBlock->locals.end()){
-			printf("undefined variable: %s\n", varName.c_str());
-			return NULL;
-		}else
-		{
-			return it->second;
-		}
 	}
     
     std::map<std::string, Value*>& locals() {
