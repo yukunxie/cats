@@ -2,6 +2,7 @@ all: parser
 
 OBJS = parser.o  \
        codegen.o \
+	   context.o \
        main.o    \
        tokens.o  \
        corefn.o  \
@@ -25,7 +26,7 @@ parser.hpp: parser.cpp
 tokens.cpp: tokens.l parser.hpp
 	flex -o $@ $^ 
 
-%.o: %.cpp
+%.o: %.cpp 
 	g++ -c $(CPPFLAGS) -o $@ $< $(INC) $(LIB) -g
 
 
