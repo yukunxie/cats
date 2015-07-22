@@ -1,6 +1,6 @@
 
 int do_math(int a) {
-	if (88888888 == 9) {echo(123)} else {}
+	if (9 == 9) {echo(123)}
 	a = a * 10
 #ffffffffffffffff
 	if (9 == 9){

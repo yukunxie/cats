@@ -133,10 +133,10 @@ public:
 
 class NIfElseStatement : public NStatement {
 public:
-	NExpression& condExpr;
-	NBlock& thenBlock;
-	NBlock&  elseBlock;
-	NIfElseStatement(NExpression& condExpr, NBlock& thenBlock, NBlock& elseBlock ) :
+	NExpression* condExpr;
+	NBlock* thenBlock;
+	NBlock*  elseBlock;
+	NIfElseStatement(NExpression* condExpr, NBlock* thenBlock, NBlock* elseBlock = NULL) :
 		condExpr(condExpr), thenBlock(thenBlock), elseBlock(elseBlock) {}
 	virtual llvm::Value* codeGen(CodeGenContext& context);
 };

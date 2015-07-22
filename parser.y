@@ -128,7 +128,8 @@ expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
      | TLPAREN expr TRPAREN { $$ = $2; }
 	 ;
 	
-if_stmt : TIF TLPAREN expr TRPAREN block TELSE block {$$ = new NIfElseStatement(*$3, *$5, *$7);}
+if_stmt : TIF TLPAREN expr TRPAREN block {$$ = new NIfElseStatement($3, $5, NULL);}
+		| TIF TLPAREN expr TRPAREN block TELSE block {$$ = new NIfElseStatement($3, $5, $7);}
 		;
 call_args : /*blank*/  { $$ = new ExpressionList(); }
 		  | expr { $$ = new ExpressionList(); $$->push_back($1); }

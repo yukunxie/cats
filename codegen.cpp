@@ -225,25 +225,22 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 
 Value* NIfElseStatement::codeGen(CodeGenContext& context)
 {
-	//std::cout <<"being" << endl;
-	Value* test = condExpr.codeGen( context );
+	Value* test = condExpr->codeGen( context );
 	
-	//std::cout <<"being 1 " << test << endl;
 	BasicBlock *btrue = BasicBlock::Create(getGlobalContext(), "thenBlock", context.currentFunction);
-	//std::cout <<"being 2 " << btrue << endl;
 	BasicBlock *bfalse = BasicBlock::Create(getGlobalContext(), "elseBlock", context.currentFunction);
-	//std::cout <<"being 3 " << bfalse << endl;
 	BasicBlock *bmerge = BasicBlock::Create(getGlobalContext(), "mergeStmt", context.currentFunction);    
-	//std::cout <<"being 4 " << context.currentBlock() << endl;
 	auto ret = llvm::BranchInst::Create(btrue,bfalse,test,context.currentBlock());
 	
-	//std::cout <<"if self " << endl;
 	context.pushBlock(btrue);
-	thenBlock.codeGen(context);
+	thenBlock->codeGen(context);
 	llvm::BranchInst::Create(bmerge,context.currentBlock());
 	context.popBlock();
 	context.pushBlock(bfalse);
-	elseBlock.codeGen(context);
+	if (elseBlock != NULL)
+	{
+		elseBlock->codeGen(context);
+	}
 	llvm::BranchInst::Create(bmerge,context.currentBlock());
 	context.popBlock();
 	context.pushBlock(bmerge);
