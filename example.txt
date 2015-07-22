@@ -2,13 +2,13 @@
 int do_math(int a) {
 	if (88888888 == 9) {echo(123)} else {}
 	a = a * 10
-
+#ffffffffffffffff
 	if (9 == 9){
-		int a = 5 
 		int x = a * 5
 		echo(x)
+		a = x
 	}
-	else{}
+	else {}
 	int x = a * 5
 	return x + 3
 }

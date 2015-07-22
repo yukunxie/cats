@@ -1,17 +1,47 @@
 %{
 #include <string>
+#include <stdint.h>
 #include "node.h"
-#include "parser.hpp"
 
 #define SAVE_TOKEN  yylval.string = new std::string(yytext, yyleng)
 #define TOKEN(t)    (yylval.token = t)
+
+extern void yyerror(const char *msg);
+
+typedef struct YYLTYPE  
+{  
+	int first_line;  
+	int first_column;  
+	int last_line;  
+	int last_column;  
+} YYLTYPE;
+
+#define YYLTYPE_IS_DECLARED 1
+
+int yycolumn = 1;
+
+#include "parser.hpp"
+
+void saveLocation()
+{
+	yylloc.first_line = yylloc.last_line;
+	yylloc.last_line = yylineno;
+	yylloc.first_column = yycolumn;
+	yylloc.last_column = yycolumn + yyleng - 1;
+	yycolumn += yyleng;
+	//printf("%d, %d\n", yylineno, yycolumn);
+}
+#define YY_USER_ACTION saveLocation();
+
 %}
 
 %option noyywrap
 
 %%
 
-[ \t\n]					        ;
+#.*\n							{yylineno += 1; yycolumn = 0;};
+[\n]							{yylineno += 1; yycolumn = 0;};
+[ \t]					        ;
 "extern"                        return TOKEN(TEXTERN);
 "return"				        return TOKEN(TRETURN);
 "for"							return TOKEN(TFOR);

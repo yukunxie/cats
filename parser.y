@@ -5,8 +5,28 @@
 	NBlock *programBlock; /* the top level root node of our final AST */
 
 	extern int yylex();
-	void yyerror(const char *s) { std::printf("Error: %s\n", s);std::exit(1); }
+	extern int yycolumn;
+	extern int yylineno;
+	extern int yyleng;
+	
+	// customized lexer infomation
+	typedef struct YYLTYPE  
+	{  
+		int first_line;  
+		int first_column;  
+		int last_line;  
+		int last_column;  
+	} YYLTYPE;
+	#define YYLTYPE_IS_DECLARED 1
+
+	void yyerror(const char *s) 
+	{	
+		std::cout << "Error-> (" << yylineno << ":"<<yycolumn - yyleng << "-" << yycolumn << ")"  << s << std::endl;
+		std::exit(1); 
+	}
 %}
+
+%locations
 
 /* Represents the many different ways we can access our data */
 %union {
