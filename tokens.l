@@ -60,8 +60,8 @@ void saveLocation()
 ">"				          		return TOKEN(TCGT);
 ">="					          return TOKEN(TCGE);
 
-"("	          					return TOKEN(TLPAREN);
-")"					          	return TOKEN(TRPAREN);
+"("	          					return '(';
+")"					          	return ')';
 "{"         						return TOKEN(TLBRACE);
 "}"					          	return TOKEN(TRBRACE);
 

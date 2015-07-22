@@ -48,7 +48,7 @@
  */
 %token <string> TIDENTIFIER TINTEGER TDOUBLE
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
-%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
+%token <token> TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
 %token <token> TRETURN TEXTERN
 %token <token> TFOR TWHILE TIF TELSE
@@ -95,11 +95,11 @@ var_decl : ident ident { $$ = new NVariableDeclaration(*$1, *$2); }
 		 | ident ident TEQUAL expr { $$ = new NVariableDeclaration(*$1, *$2, $4); }
 		 ;
 
-extern_decl : TEXTERN ident ident TLPAREN func_decl_args TRPAREN
+extern_decl : TEXTERN ident ident '(' func_decl_args ')'
                 { $$ = new NExternDeclaration(*$2, *$3, *$5); delete $5; }
             ;
 
-func_decl : ident ident TLPAREN func_decl_args TRPAREN block 
+func_decl : ident ident '(' func_decl_args ')' block 
 			{ $$ = new NFunctionDeclaration(*$1, *$2, *$4, *$6); delete $4; }
 		  ;
 
@@ -117,7 +117,7 @@ numeric : TINTEGER { $$ = new NInteger(atol($1->c_str())); delete $1; }
 		;
 	
 expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
-	 | ident TLPAREN call_args TRPAREN { $$ = new NMethodCall(*$1, *$3); delete $3; }
+	 | ident '(' call_args ')' { $$ = new NMethodCall(*$1, *$3); delete $3; }
 	 | ident { $<ident>$ = $1; }
 	 | numeric
          | expr TMUL expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
@@ -125,11 +125,11 @@ expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
          | expr TPLUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TMINUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
  	 | expr comparison expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
-     | TLPAREN expr TRPAREN { $$ = $2; }
+     | '(' expr ')' { $$ = $2; }
 	 ;
 	
-if_stmt : TIF TLPAREN expr TRPAREN block {$$ = new NIfElseStatement($3, $5, NULL);}
-		| TIF TLPAREN expr TRPAREN block TELSE block {$$ = new NIfElseStatement($3, $5, $7);}
+if_stmt : TIF '(' expr ')' block {$$ = new NIfElseStatement($3, $5, NULL);}
+		| TIF '(' expr ')' block TELSE block {$$ = new NIfElseStatement($3, $5, $7);}
 		;
 call_args : /*blank*/  { $$ = new ExpressionList(); }
 		  | expr { $$ = new ExpressionList(); $$->push_back($1); }
