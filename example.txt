@@ -3,7 +3,7 @@ int do_math(int a) {
 	if (9 == 9) {echo(123)}
 	a = a * 10
 #ffffffffffffffff
-	if (9 == 9){
+	if (18 >= 9){
 		int x = a * 5
 		echo(x)
 		a = x

@@ -105,6 +105,7 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 {
 	//std::cout << "Creating binary operation " << op << endl;
 	Instruction::BinaryOps instr;
+	CmpInst::Predicate cmpInst;
 	switch (op) {
 		case TPLUS: 	instr = Instruction::Add; goto math;
 		case TMINUS: 	instr = Instruction::Sub; goto math;
@@ -112,7 +113,13 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 		case TDIV: 		instr = Instruction::SDiv; goto math;
 				
 		/* TODO comparison */
-		case TCEQ:		goto cmp;
+		case TCEQ:		cmpInst = CmpInst::ICMP_EQ; goto cmp;
+		case TCNE:		cmpInst = CmpInst::ICMP_NE; goto cmp;
+		case TCLT:		cmpInst = CmpInst::ICMP_ULT; goto cmp;
+		case TCLE:		cmpInst = CmpInst::ICMP_ULE; goto cmp;
+		case TCGT:		cmpInst = CmpInst::ICMP_UGT; goto cmp;
+		case TCGE:		cmpInst = CmpInst::ICMP_UGE; goto cmp;
+		//TCEQ | TCNE | TCLT | TCLE | TCGT | TCGE;
 	}
 
 	return NULL;
@@ -121,7 +128,7 @@ math:
 		rhs.codeGen(context), "", context.currentBlock());
 
 cmp:
-	return CmpInst::Create(Instruction::ICmp, CmpInst::ICMP_EQ,lhs.codeGen(context), rhs.codeGen(context), "", context.currentBlock());
+	return CmpInst::Create(Instruction::ICmp, cmpInst,lhs.codeGen(context), rhs.codeGen(context), "", context.currentBlock());
 }
 
 Value* NAssignment::codeGen(CodeGenContext& context)
