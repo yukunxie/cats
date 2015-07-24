@@ -6,7 +6,7 @@ int do_math(int a) {
 	if (18 >= 9){
 		int x = a * 5
 		echo(x)
-		a = x
+		a = x 
 	}
 	else {}
 	int x = a * 5
