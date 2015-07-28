@@ -18,27 +18,15 @@
 
 using namespace llvm;
 
+class NFunctionDeclaration;
+
 enum ValueType{
 	VT_NULL,
 	VT_LONG,
 	VT_BOOL,
 	VT_CHAR,
 	VT_DOUBLE,
-};
-
-class ClassInfo{
-public:
-	std::string name;
-	llvm::Type * llvmType;
-
-public:
-	ClassInfo(const std::string& name, llvm::Type* llvmType);
-
-public:
-	bool isBoolType();
-	bool isLongType();
-	bool isDoubleType();
-	bool isCharType();
+	VT_FUNCTION,
 };
 
 class ValueBase{
@@ -50,7 +38,9 @@ public:
 	ValueBase(ValueType type, llvm::Value * value):
 		type(type), value(value)
 	{}
-
+    
+    virtual llvm::Type* getRealType();
+    
 	ValueType getType(){
 		return this->type;
 	}
@@ -72,6 +62,8 @@ public:
 	LongValue(llvm::Value* value):
 		ValueBase(ValueType::VT_LONG, value)
 	{}
+    
+    llvm::Type* getRealType();
 };
 
 class DoubleValue: public ValueBase{
@@ -79,6 +71,8 @@ public:
 	DoubleValue(llvm::Value* value):
 		ValueBase(ValueType::VT_DOUBLE, value)
 	{}
+    
+    virtual llvm::Type* getRealType();
 };
 
 class CharValue: public ValueBase{
@@ -102,4 +96,19 @@ public:
 	{}
 };
 
+class FunctionValue: public ValueBase{
+private:
+    NFunctionDeclaration * functionInfo;
+public:
+	FunctionValue(llvm::Value* value):
+		ValueBase(ValueType::VT_FUNCTION, value)
+	{}
+    
+    FunctionValue(NFunctionDeclaration* function):
+    ValueBase(ValueType::VT_FUNCTION, NULL), functionInfo(function)
+    {}
+    NFunctionDeclaration* getFunctionInfo(){return functionInfo;}
+    
+    
+};
 #endif

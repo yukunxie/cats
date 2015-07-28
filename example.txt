@@ -1,17 +1,25 @@
 
-int do_math(int a) {
+int do_math(a) {
+	echo(a)
 	if (9 == 9) {echo(123)}
 	a = a * 10
-#ffffffffffffffff
 	if (18 >= 9){
-		int x = a * 5
+		x = a * 5
 		echo(x)
 		a = x 
+		if (10 == 9){ echo(999999999)}else {echo(7777)}
 	}
 	else {}
-	int x = a * 5
-	return x + 3
+	x = a * 5
+	return x 
 }
 
-
 echo(do_math(12))
+#a = do_math(12)
+#echo(a)
+#b = do_math(13)
+#
+#a = 10
+#echo (a )
+#a = 11
+#echo(a)

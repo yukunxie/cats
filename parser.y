@@ -35,8 +35,7 @@
 	NExpression *expr;
 	NStatement *stmt;
 	NIdentifier *ident;
-	NVariableDeclaration *var_decl;
-	std::vector<NVariableDeclaration*> *varvec;
+	std::vector<NIdentifier*> *varvec;
 	std::vector<NExpression*> *exprvec;
 	std::string *string;
 	int token;
@@ -63,7 +62,7 @@
 %type <varvec> func_decl_args
 %type <exprvec> call_args
 %type <block> program stmts block
-%type <stmt> stmt var_decl func_decl extern_decl if_stmt
+%type <stmt> stmt func_decl /*extern_decl*/ if_stmt
 %type <token> comparison
 
 /* Operator precedence for mathematical operators */
@@ -81,7 +80,7 @@ stmts : stmt { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
 	  | stmts stmt { $1->statements.push_back($<stmt>2); }
 	  ;
 
-stmt : var_decl | func_decl | extern_decl   
+stmt : func_decl /* | extern_decl */  
 	| if_stmt {$$ = $1;}
 	 | expr { $$ = new NExpressionStatement(*$1); }
 	 | TRETURN expr { $$ = new NReturnStatement(*$2); }
@@ -91,13 +90,10 @@ block : TLBRACE stmts TRBRACE { $$ = $2; }
 	  | TLBRACE TRBRACE { $$ = new NBlock(); }
 	  ;
 
-var_decl : ident ident { $$ = new NVariableDeclaration(*$1, *$2); }
-		 | ident ident TEQUAL expr { $$ = new NVariableDeclaration(*$1, *$2, $4); }
-		 ;
 
-extern_decl : TEXTERN ident ident '(' func_decl_args ')'
-                { $$ = new NExternDeclaration(*$2, *$3, *$5); delete $5; }
-            ;
+//extern_decl : TEXTERN ident ident '(' func_decl_args ')'
+//                { $$ = new NExternDeclaration(*$2, *$3, *$5); delete $5; }
+//            ;
 
 func_decl : ident ident '(' func_decl_args ')' block 
 			{ $$ = new NFunctionDeclaration(*$1, *$2, *$4, *$6); delete $4; }
@@ -105,8 +101,8 @@ func_decl : ident ident '(' func_decl_args ')' block
 
 	
 func_decl_args : /*blank*/  { $$ = new VariableList(); }
-		  | var_decl { $$ = new VariableList(); $$->push_back($<var_decl>1); }
-		  | func_decl_args TCOMMA var_decl { $1->push_back($<var_decl>3); }
+		  | ident { $$ = new VariableList(); $$->push_back($<ident>1); }
+		  | func_decl_args TCOMMA ident { $1->push_back($<ident>3); }
 		  ;
 
 ident : TIDENTIFIER { $$ = new NIdentifier(*$1); delete $1; }

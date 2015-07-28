@@ -1,23 +1,19 @@
 
 #include "classinfo.h"
+#include "codegen.h"
 
-ClassInfo::ClassInfo(const std::string& name, llvm::Type* llvmType):
-	name(name), llvmType(llvmType)
-{}
-
-bool ClassInfo::isBoolType(){
-	return name == "bool";
+llvm::Type* ValueBase::getRealType(){
+    return Type::getVoidTy(getGlobalContext());
 }
 
-bool ClassInfo::isLongType(){
-	return name == "long";
+llvm::Type* LongValue::getRealType(){
+    return Type::getInt64Ty(getGlobalContext());
 }
 
-bool ClassInfo::isDoubleType(){
-	return name == "double";
+
+llvm::Type* DoubleValue::getRealType(){
+    return Type::getDoubleTy(getGlobalContext());
 }
 
-bool ClassInfo::isCharType(){
-	return name == "char";
-}
+
 

@@ -7,7 +7,7 @@ OBJS = parser.o  \
        tokens.o  \
        corefn.o  \
 	   native.o  \
-	   classinfo.o \
+	   classinfo.o\
 
 LIB=-L/usr/local/Cellar/llvm/3.5.0_2/lib
 INC=-I/usr/local/Cellar/llvm/3.5.0_2/include

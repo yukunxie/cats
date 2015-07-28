@@ -17,6 +17,8 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/ValueSymbolTable.h>
 
+#include "classinfo.h"
+
 using namespace llvm;
 
 class NBlock;
@@ -24,15 +26,15 @@ class NBlock;
 class CodeGenBlock {
 public:
 	BasicBlock *block;
-	Value *returnValue;
+	ValueBase *returnValue;
 	Function * currentFunction;
 	CodeGenBlock * parentBlock;
-	std::map<std::string, Value*> locals;
+	std::map<std::string, ValueBase*> locals;
 	
 public:
 	CodeGenBlock();
-	Value* getVarValue(const std::string &varName);
-	void setVarValue(const std::string &varName, Value *value);
+	ValueBase* getVarValue(const std::string &varName);
+	void setVarValue(const std::string &varName, ValueBase *value);
 };
 
 class CodeGenContext {
@@ -50,13 +52,13 @@ public:
 	GenericValue runCode();
 
 	BasicBlock *currentBlock() ;
-	Value * getVar(const std::string &varName);	
-	std::map<std::string, Value*>& locals() ;	
-	Value * getVarValue(std::string varName);
-	Value* getCurrentReturnValue();
+	ValueBase * getVar(const std::string &varName);
+	std::map<std::string, ValueBase*>& locals() ;
+	ValueBase* getVarValue(std::string varName);
+	ValueBase* getCurrentReturnValue();
 
-	void setVarValue(std::string varName, Value *value);
+	void setVarValue(std::string varName, ValueBase *value);
 	void pushBlock(BasicBlock *block);
 	void popBlock();
-	void setCurrentReturnValue(Value *value);
+	void setCurrentReturnValue(ValueBase *value);
 };

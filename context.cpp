@@ -7,10 +7,10 @@ CodeGenBlock::CodeGenBlock():
 }
 	
 
-Value* CodeGenBlock::getVarValue(const std::string &varName){
+ValueBase* CodeGenBlock::getVarValue(const std::string &varName){
 	CodeGenBlock *pBlock = this;
 	while(pBlock != NULL && pBlock->currentFunction == this->currentFunction){
-		std::map<std::string, Value *>::iterator it = pBlock->locals.find(varName);
+		std::map<std::string, ValueBase *>::iterator it = pBlock->locals.find(varName);
 		if (it != pBlock->locals.end()){
 			return it->second;
 		}
@@ -20,10 +20,10 @@ Value* CodeGenBlock::getVarValue(const std::string &varName){
 	return NULL;
 }
 
-void CodeGenBlock::setVarValue(const std::string &varName, Value *value){
+void CodeGenBlock::setVarValue(const std::string &varName, ValueBase *value){
 	CodeGenBlock *pBlock = this;
 	while(pBlock != NULL && pBlock->currentFunction == this->currentFunction){
-		std::map<std::string, Value *>::iterator it = pBlock->locals.find(varName);
+		std::map<std::string, ValueBase *>::iterator it = pBlock->locals.find(varName);
 		if (it != pBlock->locals.end()){
 			it->second = value;
 			break;
@@ -40,21 +40,21 @@ CodeGenContext::CodeGenContext() {
 }
 
 
-Value* CodeGenContext::getVar(const std::string &varName){
+ValueBase* CodeGenContext::getVar(const std::string &varName){
 	CodeGenBlock *pBlock = blocks.top();
 	return pBlock->getVarValue(varName);
 }
 
-std::map<std::string, Value*>& CodeGenContext::locals() {
+std::map<std::string, ValueBase*>& CodeGenContext::locals() {
 	return blocks.top()->locals;
 }
 
-Value* CodeGenContext::getVarValue(std::string varName)
+ValueBase* CodeGenContext::getVarValue(std::string varName)
 {
 	blocks.top()->getVarValue(varName);
 }
 
-void CodeGenContext::setVarValue(std::string varName, Value *value)
+void CodeGenContext::setVarValue(std::string varName, ValueBase *value)
 {
 	blocks.top()->setVarValue(varName, value);
 }
@@ -82,11 +82,11 @@ void CodeGenContext::popBlock() {
 	delete top;
 }
 
-void CodeGenContext::setCurrentReturnValue(Value *value) {
+void CodeGenContext::setCurrentReturnValue(ValueBase *value) {
 	blocks.top()->returnValue = value;
 }
 
-Value* CodeGenContext::getCurrentReturnValue() {
+ValueBase* CodeGenContext::getCurrentReturnValue() {
 	return blocks.top()->returnValue;
 }
 
