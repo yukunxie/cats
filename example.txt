@@ -12,6 +12,8 @@ int do_math(a) {
 	else {}
 	x = a * 5
 	return x 
+	return 12312323213
+	x = a * 5
 }
 
 echo(do_math(12))

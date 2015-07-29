@@ -87,7 +87,7 @@ ValueBase* NIdentifier::codeGen(CodeGenContext& context)
 
 ValueBase* NMethodCall::codeGen(CodeGenContext& context)
 {
-    std::cout <<"method call: " << id.name << endl;
+    //std::cout <<"method call: " << id.name << endl;
     ValueBase * functionInfo = context.getVar(id.name);
     if (functionInfo == NULL){
         return this->callCompilerFunc(context);
@@ -189,6 +189,14 @@ ValueBase* NBlock::codeGen(CodeGenContext& context)
 	for (it = statements.begin(); it != statements.end(); it++) {
 		//std::cout << "Generating code for " << typeid(**it).name() << endl;
 		last = (**it).codeGen(context);
+		if (strcmp(typeid(**it).name(), "16NReturnStatement") == 0){
+			BasicBlock *retStmt = BasicBlock::Create(getGlobalContext(), "retStmt", context.currentFunction);    
+			Value *value = last->getValue();
+    		ReturnInst::Create(getGlobalContext(), value, retStmt);
+			llvm::BranchInst::Create(retStmt,context.currentBlock());
+			return (ValueBase*)0xff;
+		}
+
 	}
 	//std::cout << "Creating block" << endl;
 	return NULL;
@@ -203,8 +211,8 @@ ValueBase* NExpressionStatement::codeGen(CodeGenContext& context)
 ValueBase* NReturnStatement::codeGen(CodeGenContext& context)
 {
 	ValueBase *returnValue = expression.codeGen(context);
-    ReturnInst::Create(getGlobalContext(), returnValue->getValue(), context.currentBlock());
-	return NULL;
+    //ReturnInst::Create(getGlobalContext(), returnValue->getValue(), context.currentBlock());
+	return returnValue;
 }
 
 ValueBase* NExternDeclaration::codeGen(CodeGenContext& context)
@@ -252,6 +260,7 @@ ValueBase* NFunctionDeclaration::codeGen(CodeGenContext& context, const std::vec
 	
 	block.codeGen(context);
 	
+	
 	while (context.currentBlock() != oldBlock)
 		context.popBlock();
 	context.currentFunction = oldFunction;
@@ -269,21 +278,27 @@ ValueBase* NIfElseStatement::codeGen(CodeGenContext& context)
 	
 	auto oldBlock = context.currentBlock();
 	context.pushBlock(btrue);
-	thenBlock->codeGen(context);
-	llvm::BranchInst::Create(bmerge,context.currentBlock());
+	auto retThen = thenBlock->codeGen(context);
+	if (retThen == NULL){
+		llvm::BranchInst::Create(bmerge,context.currentBlock());
+	}
 	while (context.currentBlock() != oldBlock){
 		context.popBlock();
 	}
 	oldBlock = context.currentBlock();
 	context.pushBlock(bfalse);
+	ValueBase * retElse = NULL;
 	if (elseBlock != NULL)
 	{
-		elseBlock->codeGen(context);
+		retElse = elseBlock->codeGen(context);
 	}
-	llvm::BranchInst::Create(bmerge,context.currentBlock());
+	if (retElse == NULL){
+		llvm::BranchInst::Create(bmerge,context.currentBlock());
+	}
 	while (context.currentBlock() != oldBlock){
 		context.popBlock();
 	}
 	context.pushBlock(bmerge);
+	
 	return NULL;
 }
