@@ -10,22 +10,22 @@ IRBuilder<> builder(getGlobalContext());
 void CodeGenContext::generateCode(NBlock& root)
 {
 	//std::cout << "Generating code...\n";
-	
+
 	/* Create the top level interpreter function to call as entry */
 	vector<Type*> argTypes;
 	FunctionType *ftype = FunctionType::get(Type::getVoidTy(getGlobalContext()), makeArrayRef(argTypes), false);
 	mainFunction = Function::Create(ftype, GlobalValue::InternalLinkage, "main", module);
 	BasicBlock *bblock = BasicBlock::Create(getGlobalContext(), "entry", mainFunction, 0);
-	
+
 	currentFunction = mainFunction;
-	
+
 	/* Push a new variable/block context */
 	pushBlock(bblock);
 	root.codeGen(*this); /* emit bytecode for the toplevel block */
 	ReturnInst::Create(getGlobalContext(), bblock);
 	popBlock();
-	
-	/* Print the bytecode in a human-readable format 
+
+	/* Print the bytecode in a human-readable format
 	   to see if our program compiled properly
 	 */
 	//std::cout << "Code is generated.\n";
@@ -45,7 +45,7 @@ GenericValue CodeGenContext::runCode() {
 }
 
 /* Returns an LLVM type based on the identifier */
-static Type *typeOf(const NIdentifier& type) 
+static Type *typeOf(const NIdentifier& type)
 {
 	if (type.name.compare("int") == 0) {
 		return Type::getInt64Ty(getGlobalContext());
@@ -77,12 +77,8 @@ ValueBase* NIdentifier::codeGen(CodeGenContext& context)
 	if (value == NULL) {
 		return NULL;
 	}
-	//if (context.locals().find(name) == context.locals().end()) {
-	//	std::cerr << "undeclared variable " << name << endl;
-	//	return NULL;
-	//}
-	//std::cout << value <<" " << context.locals()[name] << endl;
-	return new LongValue(new LoadInst(value->getValue(), "", false, context.currentBlock()));
+
+	return createValue(value->getType(), new LoadInst(value->getValue(), "", false, context.currentBlock()));
 }
 
 ValueBase* NMethodCall::codeGen(CodeGenContext& context)
@@ -120,7 +116,7 @@ ValueBase* NMethodCall::callScriptFunc(CodeGenContext& context)
         std::cerr<< id.name <<" is not a function" <<endl;
         return NULL;
     }
-    
+
     std::vector<Value*> args;
     std::vector<Type*> argsTypes;
     ExpressionList::const_iterator it;
@@ -129,7 +125,7 @@ ValueBase* NMethodCall::callScriptFunc(CodeGenContext& context)
         argsTypes.push_back(arg->getRealType());
         args.push_back(arg->getValue());
     }
-    
+
     ValueBase *value = ((FunctionValue*)functionInfo)->getFunctionInfo()->codeGen(context, argsTypes);
     CallInst *call = CallInst::Create(value->getValue(), makeArrayRef(args), "", context.currentBlock());
     //std::cout << "Creating method call: " << id.name << endl;
@@ -142,11 +138,11 @@ ValueBase* NBinaryOperator::codeGen(CodeGenContext& context)
 	Instruction::BinaryOps instr;
 	CmpInst::Predicate cmpInst;
 	switch (op) {
-		case TPLUS: 	instr = Instruction::Add; goto math;
+		case TPLUS: 	instr = Instruction::FAdd; goto math;
 		case TMINUS: 	instr = Instruction::Sub; goto math;
 		case TMUL: 		instr = Instruction::Mul; goto math;
 		case TDIV: 		instr = Instruction::SDiv; goto math;
-				
+
 		/* TODO comparison */
 		case TCEQ:		cmpInst = CmpInst::ICMP_EQ; goto cmp;
 		case TCNE:		cmpInst = CmpInst::ICMP_NE; goto cmp;
@@ -158,12 +154,97 @@ ValueBase* NBinaryOperator::codeGen(CodeGenContext& context)
 	}
 
 	return NULL;
-math:
-	return new LongValue(BinaryOperator::Create(instr, lhs.codeGen(context)->getValue(),
-		rhs.codeGen(context)->getValue(), "", context.currentBlock()));
-
+math:{
+	ValueBase *v1 = lhs.codeGen(context);
+	ValueBase *v2 = rhs.codeGen(context);
+	ValueType retType = binaryOpTypeCast(v1->getType(), v2->getType());
+	switch(retType){
+	case VT_LONG:
+		return this->doArithmeticalIntOps(context, v1->castTo(retType, context), v2->castTo(retType, context));
+	case VT_DOUBLE:
+		return this->doArithmeticalDoubleOps(context, v1->castTo(retType, context), v2->castTo(retType, context));
+	default:
+		return NULL;
+	}
+}
 cmp:
 	return new BoolValue(CmpInst::Create(Instruction::ICmp, cmpInst,lhs.codeGen(context)->getValue(), rhs.codeGen(context)->getValue(), "", context.currentBlock()));
+}
+
+ValueBase* NBinaryOperator::doArithmeticalOps(CodeGenContext& context)
+{
+	return NULL;
+}
+
+ValueBase* NBinaryOperator::doArithmeticalDoubleOps(CodeGenContext& context, ValueBase* p1, ValueBase* p2)
+{
+	Instruction::BinaryOps instr;
+	switch (op) {
+		case TPLUS:{
+			instr = Instruction::FAdd;
+			break;
+		}
+
+		case TMINUS:{
+			instr = Instruction::FSub; 
+			break;
+		}
+
+		case TMUL:{
+			instr = Instruction::FMul;
+			break;
+		}
+
+		case TDIV:{
+			instr = Instruction::FDiv;
+			break;
+		}
+		default:
+			std::cout <<"undefined binary operation: " << op << std::endl;
+			assert(false);
+	}
+	llvm::Value* v1 = p1->getValue();
+	llvm::Value* v2 = p2->getValue();
+	llvm::Value *ret = BinaryOperator::Create(instr, v1, v2, "", context.currentBlock());
+	return createValue(ValueType::VT_DOUBLE, ret);
+}
+
+ValueBase* NBinaryOperator::doArithmeticalIntOps(CodeGenContext& context, ValueBase* p1, ValueBase* p2)
+{
+	Instruction::BinaryOps instr;
+	switch (op) {
+		case TPLUS:{
+			instr = Instruction::Add;
+			break;
+		}
+
+		case TMINUS:{
+			instr = Instruction::Sub; 
+			break;
+		}
+
+		case TMUL:{
+			instr = Instruction::Mul;
+			break;
+		}
+
+		case TDIV:{
+			instr = Instruction::SDiv;
+			break;
+		}
+		default:
+			std::cout <<"undefined binary operation: " << op << std::endl;
+			assert(false);
+	}
+	llvm::Value* v1 = p1->getValue();
+	llvm::Value* v2 = p2->getValue();
+	llvm::Value *ret = BinaryOperator::Create(instr, v1, v2, "", context.currentBlock());
+	return createValue(ValueType::VT_LONG, ret);
+}
+
+ValueBase* NBinaryOperator::doLogicalOps(CodeGenContext& context)
+{
+	return NULL;
 }
 
 ValueBase* NAssignment::codeGen(CodeGenContext& context)
@@ -176,7 +257,7 @@ ValueBase* NAssignment::codeGen(CodeGenContext& context)
         value = new LongValue(alloc);
         context.locals()[lhs.name] = value;
 	}
-    
+
     ValueBase* _target = rhs.codeGen(context);
     new StoreInst(_target->getValue(), value->getValue(), false, context.currentBlock());
     return _target;
@@ -190,7 +271,7 @@ ValueBase* NBlock::codeGen(CodeGenContext& context)
 		//std::cout << "Generating code for " << typeid(**it).name() << endl;
 		last = (**it).codeGen(context);
 		if (strcmp(typeid(**it).name(), "16NReturnStatement") == 0){
-			BasicBlock *retStmt = BasicBlock::Create(getGlobalContext(), "retStmt", context.currentFunction);    
+			BasicBlock *retStmt = BasicBlock::Create(getGlobalContext(), "retStmt", context.currentFunction);
 			Value *value = last->getValue();
     		ReturnInst::Create(getGlobalContext(), value, retStmt);
 			llvm::BranchInst::Create(retStmt,context.currentBlock());
@@ -244,23 +325,23 @@ ValueBase* NFunctionDeclaration::codeGen(CodeGenContext& context, const std::vec
 
 	Function::arg_iterator argsValues = function->arg_begin();
     Value* argumentValue;
-    
+
     VariableList::const_iterator it;
     std::vector<llvm::Type*>::const_iterator itType = argTypes.begin();
 	for (it = arguments.begin(); it != arguments.end(); it++) {
         argumentValue = argsValues++;
         itType = itType ++;
-        
+
         AllocaInst *alloc = new AllocaInst(*itType, (*it)->name.c_str(), context.currentBlock());
         ValueBase* value = new LongValue(alloc);
         context.locals()[(*it)->name] = value;
-        
+
         new StoreInst(argumentValue, value->getValue(), false, context.currentBlock());
 	}
-	
+
 	block.codeGen(context);
-	
-	
+
+
 	while (context.currentBlock() != oldBlock)
 		context.popBlock();
 	context.currentFunction = oldFunction;
@@ -270,12 +351,12 @@ ValueBase* NFunctionDeclaration::codeGen(CodeGenContext& context, const std::vec
 ValueBase* NIfElseStatement::codeGen(CodeGenContext& context)
 {
 	ValueBase* test = condExpr->codeGen( context );
-	
+
 	BasicBlock *btrue = BasicBlock::Create(getGlobalContext(), "thenBlock", context.currentFunction);
 	BasicBlock *bfalse = BasicBlock::Create(getGlobalContext(), "elseBlock", context.currentFunction);
-	BasicBlock *bmerge = BasicBlock::Create(getGlobalContext(), "mergeStmt", context.currentFunction);    
+	BasicBlock *bmerge = BasicBlock::Create(getGlobalContext(), "mergeStmt", context.currentFunction);
 	auto ret = llvm::BranchInst::Create(btrue,bfalse,test->getValue(), context.currentBlock());
-	
+
 	auto oldBlock = context.currentBlock();
 	context.pushBlock(btrue);
 	auto retThen = thenBlock->codeGen(context);
@@ -299,6 +380,6 @@ ValueBase* NIfElseStatement::codeGen(CodeGenContext& context)
 		context.popBlock();
 	}
 	context.pushBlock(bmerge);
-	
+
 	return NULL;
 }
