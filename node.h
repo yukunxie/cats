@@ -69,6 +69,12 @@ public:
 	NBinaryOperator(NExpression& lhs, int op, NExpression& rhs) :
 		lhs(lhs), rhs(rhs), op(op) { }
 	virtual ValueBase* codeGen(CodeGenContext& context);
+
+private:
+	ValueBase* doArithmeticalOps(CodeGenContext& context);
+	ValueBase* doArithmeticalDoubleOps(CodeGenContext& context, ValueBase* p1, ValueBase* p2);
+	ValueBase* doArithmeticalIntOps(CodeGenContext& context, ValueBase* p1, ValueBase* p2);
+	ValueBase* doLogicalOps(CodeGenContext& context);
 };
 
 class NAssignment : public NExpression {

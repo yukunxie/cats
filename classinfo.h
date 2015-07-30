@@ -19,6 +19,7 @@
 using namespace llvm;
 
 class NFunctionDeclaration;
+class CodeGenContext;
 
 enum ValueType{
 	VT_NULL,
@@ -28,6 +29,9 @@ enum ValueType{
 	VT_DOUBLE,
 	VT_FUNCTION,
 };
+
+ValueType binaryOpTypeCast(ValueType type1, ValueType type2);
+
 
 class ValueBase{
 private:
@@ -53,16 +57,21 @@ public:
 		this->value = value;
 	}
 
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context) = 0;
+
 	virtual ~ValueBase(){
 	}
 };
+
+ValueBase* createValue(ValueType type, llvm::Value *value);
 
 class LongValue: public ValueBase{
 public:
 	LongValue(llvm::Value* value):
 		ValueBase(ValueType::VT_LONG, value)
 	{}
-    
+	
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
     llvm::Type* getRealType();
 };
 
@@ -72,6 +81,7 @@ public:
 		ValueBase(ValueType::VT_DOUBLE, value)
 	{}
     
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
     virtual llvm::Type* getRealType();
 };
 
@@ -80,6 +90,7 @@ public:
 	CharValue(llvm::Value* value):
 		ValueBase(ValueType::VT_CHAR, value)
 	{}
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
 };
 
 class BoolValue: public ValueBase{
@@ -87,6 +98,7 @@ public:
 	BoolValue(llvm::Value* value):
 		ValueBase(ValueType::VT_BOOL, value)
 	{}
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
 };
 
 class NullValue: public ValueBase{
@@ -94,6 +106,7 @@ public:
 	NullValue(llvm::Value* value):
 		ValueBase(ValueType::VT_NULL, value)
 	{}
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
 };
 
 class FunctionValue: public ValueBase{
@@ -109,6 +122,7 @@ public:
     {}
     NFunctionDeclaration* getFunctionInfo(){return functionInfo;}
     
+	virtual ValueBase* castTo(ValueType targetType, CodeGenContext& context);
     
 };
 #endif
